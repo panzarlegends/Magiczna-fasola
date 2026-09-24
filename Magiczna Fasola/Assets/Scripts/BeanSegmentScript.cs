@@ -4,12 +4,14 @@ public enum BranchSide
 {
     None,
     Left,
-    Right
+    Right,
+    Bean
 }
 public class BeanSegmentScript : MonoBehaviour
 {
     [SerializeField] private GameObject leftLeaf;
     [SerializeField] private GameObject rightLeaf;
+    [SerializeField] private GameObject goldenBean;
 
     public BranchSide CurrentSide{  get; private set; }
     public void Setup(BranchSide side)
@@ -23,6 +25,8 @@ public class BeanSegmentScript : MonoBehaviour
         {
             rightLeaf.SetActive(side == BranchSide.Right);
         }
+
+        if(goldenBean != null) goldenBean.SetActive(side == BranchSide.Bean);
     }
 
 }

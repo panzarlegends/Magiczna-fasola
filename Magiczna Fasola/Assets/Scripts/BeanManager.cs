@@ -1,9 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class BeanManager : MonoBehaviour
 {
+    //game logic
     [Header("Settings")]
     [SerializeField] private BeanSegmentScript segmentPrefab;
     [SerializeField] private Transform spawnStart;
@@ -11,14 +14,28 @@ public class BeanManager : MonoBehaviour
     [SerializeField] private int initialSegment = 8;
 
     private readonly List<BeanSegmentScript> activeSegments = new List<BeanSegmentScript> ();
+    private int segmentCounter = 0;
+    private int levelTarget = 100;
+    private bool Spawning = true;
+
+    //UI
+    public Text scoreText;
+    public int playerScore;
+    public Text highScoreText;
+    public int highScore;
+    public GameObject gameOverScreen;
+    public GameObject newRecord;
+    public int goldenBeans;
+    public Text goldenBeansText;
+    public GameObject winScreen;
     void Start()
     {
-        Debug.Log("Skrypt ruszył");
-        Debug.Log($"--- START DIAGNOSTYKI ---");
-        Debug.Log($"Prefab: {(segmentPrefab != null ? segmentPrefab.name : "BRAK (NULL!)")}");
-        Debug.Log($"SpawnOrigin: {(spawnStart != null ? spawnStart.name : "BRAK (NULL!)")}");
-        Debug.Log($"Wartość initialSegments z Inspektora: {initialSegment}");
         GenerateInitialStalk();
+        highScore = PlayerPrefs.GetInt("Highscore", 0);
+        goldenBeans = PlayerPrefs.GetInt("Golden Beans", 0);
+        levelTarget = 10 + (goldenBeans * 25);
+        UpdateHighScore();
+        UpdateBeanScore();
     }
 
     private void GenerateInitialStalk()
@@ -26,17 +43,14 @@ public class BeanManager : MonoBehaviour
 
         if (spawnStart == null)
         {
-            Debug.LogError("[BeanManager] BŁĄD: Spawn Origin nie jest przypisany w Inspektorze!");
             return;
         }
 
         if (segmentPrefab == null)
         {
-            Debug.LogError("[BeanManager] BŁĄD: Segment Prefab nie jest przypisany w Inspektorze!");
             return;
         }
 
-        Debug.Log($"[BeanManager] Zaczynam generować pętlę dla {initialSegment} segmentów...");
 
         for (int i = 0; i < initialSegment; i++)
         {
@@ -52,9 +66,8 @@ public class BeanManager : MonoBehaviour
                 newSegment.Setup(RandomSide());
             }
             activeSegments.Add(newSegment);
-            Debug.Log($"[BeanManager] Wygenerowano segment nr {i} na pozycji {spawnPosition}");
+            segmentCounter++;
         }
-        Debug.Log($"[BeanManager] Zakończono generowanie. Łącznie segmentów w liście: {activeSegments.Count}");
     }
 
     private BranchSide RandomSide()
@@ -80,9 +93,91 @@ public class BeanManager : MonoBehaviour
         }
 
         //spawn new segment on top of sequence
-        Vector3 topPosition = spawnStart.position + Vector3.up * (activeSegments.Count * segmentHeight);
-        BeanSegmentScript topSegment = Instantiate(segmentPrefab, topPosition, Quaternion.identity, transform);
-        topSegment.Setup(RandomSide());
-        activeSegments.Add(topSegment);
+        if (Spawning)
+        {
+            Vector3 topPosition = spawnStart.position + Vector3.up * (activeSegments.Count * segmentHeight);
+            BeanSegmentScript topSegment = Instantiate(segmentPrefab, topPosition, Quaternion.identity, transform);
+            if (segmentCounter < levelTarget)
+            {
+                topSegment.Setup(RandomSide());
+                segmentCounter++;
+            }
+            else if (segmentCounter >= levelTarget)
+            {
+                topSegment.Setup(BranchSide.Bean);
+                Spawning = false;
+            }
+            activeSegments.Add(topSegment);
+        }
+        playerScore++;
+        scoreText.text = playerScore.ToString();
+    }
+
+    public bool CanChop(bool isPlayerLeft)
+    {
+        if (activeSegments.Count == 0) return true;
+
+        BranchSide bottomSide = activeSegments[0].CurrentSide;
+
+        if (isPlayerLeft && bottomSide == BranchSide.Left) return false;
+        if (!isPlayerLeft && bottomSide == BranchSide.Right) return false;
+
+        return true;
+    }
+
+    public void gameOver()
+    {
+        gameOverScreen.SetActive(true);
+        if(playerScore > highScore)
+        {
+            highScore = playerScore;
+            PlayerPrefs.SetInt("Highscore", highScore);
+            PlayerPrefs.Save();
+            newRecord.SetActive(true);
+            UpdateHighScore();
+        }
+    }
+
+    public void UpdateHighScore()
+    {
+        highScoreText.text = highScore.ToString();
+    }
+
+    public void UpdateBeanScore()
+    {
+        goldenBeansText.text = goldenBeans.ToString();
+    }
+
+    public void restartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void closeGame()
+    {
+        Application.Quit();
+    }
+
+    public BeanSegmentScript getBottomSegment()
+    {
+        if(activeSegments.Count == 0) return null;
+        return activeSegments[0];
+    }
+
+    [ContextMenu("Resetuj Rekord")]
+    public void ResetHighScore()
+    {
+        PlayerPrefs.DeleteKey("HighScore");
+        highScore = 0;
+        UpdateHighScore();
+        Debug.Log("Rekord zresetowany!");
+    }
+    [ContextMenu("Resetuj fasolki")]
+    public void ResetBeanScore()
+    {
+        PlayerPrefs.DeleteKey("Golden Beans");
+        goldenBeans = 0;
+        UpdateBeanScore();
+        Debug.Log("Rekord zresetowany!");
     }
 }
