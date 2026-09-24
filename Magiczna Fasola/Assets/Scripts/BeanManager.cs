@@ -7,13 +7,17 @@ public class BeanManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private BeanSegmentScript segmentPrefab;
     [SerializeField] private Transform spawnStart;
-    [SerializeField] private float segmentHeight = 0.2f;
+    [SerializeField] private float segmentHeight = 2f;
     [SerializeField] private int initialSegment = 8;
 
     private readonly List<BeanSegmentScript> activeSegments = new List<BeanSegmentScript> ();
     void Start()
     {
         Debug.Log("Skrypt ruszył");
+        Debug.Log($"--- START DIAGNOSTYKI ---");
+        Debug.Log($"Prefab: {(segmentPrefab != null ? segmentPrefab.name : "BRAK (NULL!)")}");
+        Debug.Log($"SpawnOrigin: {(spawnStart != null ? spawnStart.name : "BRAK (NULL!)")}");
+        Debug.Log($"Wartość initialSegments z Inspektora: {initialSegment}");
         GenerateInitialStalk();
     }
 
@@ -34,9 +38,10 @@ public class BeanManager : MonoBehaviour
 
         Debug.Log($"[BeanManager] Zaczynam generować pętlę dla {initialSegment} segmentów...");
 
-        for (int i = 0; i < activeSegments.Count; i++)
+        for (int i = 0; i < initialSegment; i++)
         {
-            Vector3 spawnPosition = spawnStart.position + Vector3.up * (i *  segmentHeight);
+            // Vector3 spawnPosition = spawnStart.position + Vector3.up * (i +  (segmentHeight+i));
+            Vector3 spawnPosition = spawnStart.position + Vector3.up * (i * segmentHeight);
             BeanSegmentScript newSegment = Instantiate(segmentPrefab,spawnPosition, Quaternion.identity, transform);
             if(i < 2)
             {
