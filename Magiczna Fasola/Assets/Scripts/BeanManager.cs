@@ -28,6 +28,9 @@ public class BeanManager : MonoBehaviour
     public int goldenBeans;
     public Text goldenBeansText;
     public GameObject winScreen;
+    public GameObject pauseScreen;
+    public GameObject controlsScreen;
+
     void Start()
     {
         GenerateInitialStalk();
@@ -158,6 +161,14 @@ public class BeanManager : MonoBehaviour
         Application.Quit();
     }
 
+    public void controls()
+    {
+        controlsScreen.SetActive(true);
+    }
+    public void closeControls()
+    {
+        controlsScreen.SetActive(false);
+    }
     public BeanSegmentScript getBottomSegment()
     {
         if(activeSegments.Count == 0) return null;

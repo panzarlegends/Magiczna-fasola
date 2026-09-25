@@ -2,23 +2,55 @@ using NUnit.Framework.Constraints;
 using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Assemblies;
+using UnityEngine.UI;
 
 public class PlayerControls : MonoBehaviour
 {
     [Header("Reference")]
     [SerializeField] private BeanManager beanManager;
+    [SerializeField] private Image timerBar;
 
     [Header("Movement settings")] 
     [SerializeField] private float sideOffset = 1.5f;
     [SerializeField] private float angle = 17f;
     private bool isBroken = false;
+    private bool isPaused = false;
     private int score = 0;
+
+    [Header("Timer settings")]
+    [SerializeField] private float maxTimer = 5f;
+    [SerializeField] private float timeBonus = 0.15f;
+    [SerializeField] private float drainSpeed = 0.5f;
+    private float currentTimer;
+
+    void Start()
+    {
+        currentTimer = maxTimer;
+    }
 
     void Update()
     {
-        if (isBroken) return;
+        //movement
+        if (Input.GetKeyDown(KeyCode.Escape) && !isBroken)
+        {
+            if (isPaused) unpause();
+            else pause();
+        }
+        if (isBroken || isPaused) return;
         if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) PerformChop(isLeft: true);
         else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) PerformChop(isLeft: false);
+
+        //timer
+        currentTimer -= Time.deltaTime * drainSpeed;
+
+        if(timerBar != null) timerBar.fillAmount = currentTimer/maxTimer;
+        if(currentTimer <= 0)
+        {
+            timeOver();
+            return;
+        }
+            
     }
 
     private void PerformChop(bool isLeft)
@@ -54,5 +86,26 @@ public class PlayerControls : MonoBehaviour
             PlayerPrefs.Save();
             beanManager.winScreen.SetActive(true);
         }
+
+        //bonus points to timer after chop
+        currentTimer += timeBonus;
+        currentTimer = Mathf.Clamp(currentTimer, 0f, maxTimer);
+    }
+
+    private void timeOver()
+    {
+        isBroken = true;
+        beanManager.gameOver();
+    }
+    private void pause()
+    {
+        isPaused = true;
+        beanManager.pauseScreen.SetActive(true);
+    }
+
+    public void unpause()
+    {
+        isPaused = false;
+        beanManager.pauseScreen.SetActive(false);
     }
 }
