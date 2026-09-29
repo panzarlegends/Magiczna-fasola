@@ -153,12 +153,14 @@ public class BeanManager : MonoBehaviour
 
     public void restartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadScene("GameScene");
+        Debug.Log("restart scene");
     }
 
     public void closeGame()
     {
         Application.Quit();
+        Debug.Log("closed game");
     }
 
     public void controls()
