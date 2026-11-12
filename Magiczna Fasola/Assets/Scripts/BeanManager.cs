@@ -12,6 +12,7 @@ public class BeanManager : MonoBehaviour
     [SerializeField] private Transform spawnStart;
     [SerializeField] private float segmentHeight = 2f;
     [SerializeField] private int initialSegment = 8;
+    [SerializeField] private float dropSpeed = 25f;
 
     private readonly List<BeanSegmentScript> activeSegments = new List<BeanSegmentScript> ();
     private int segmentCounter = 0;
@@ -39,6 +40,24 @@ public class BeanManager : MonoBehaviour
         levelTarget = 10 + (goldenBeans * 25);
         UpdateHighScore();
         UpdateBeanScore();
+    }
+    void Update()
+    {
+        for (int i = 0; i < activeSegments.Count; i++)
+        {
+            if (activeSegments[i] == null) continue;
+            Vector3 targetPos = spawnStart.position + Vector3.up * (i * segmentHeight);
+
+            // sequence drop animation
+            if (activeSegments[i].transform.position != targetPos)
+            {
+                activeSegments[i].transform.position = Vector3.MoveTowards(
+                    activeSegments[i].transform.position,
+                    targetPos,
+                    dropSpeed * Time.deltaTime
+                );
+            }
+        }
     }
 
     private void GenerateInitialStalk()
@@ -71,6 +90,7 @@ public class BeanManager : MonoBehaviour
             activeSegments.Add(newSegment);
             segmentCounter++;
         }
+        UpdateSortingOrder();
     }
 
     private BranchSide RandomSide()
@@ -81,19 +101,31 @@ public class BeanManager : MonoBehaviour
         return BranchSide.Right;
     }
 
-    public void Chop()
+    public void Chop(bool isPlayerLeft)
     {
         if (activeSegments.Count == 0) return;
         //chop down one segment
         BeanSegmentScript bottom = activeSegments[0];
         activeSegments.RemoveAt(0);
-        Destroy(bottom.gameObject);
+       // Destroy(bottom.gameObject);
 
-        //drop sequence of segments down
-        for(int i = 0; i < activeSegments.Count; i++)
+        if(bottom.CurrentSide == BranchSide.Bean)
         {
-            activeSegments[i].transform.position -= Vector3.up * segmentHeight;
+            // win animation + win screen activation
+            bottom.PlayWinningSequence(winScreen);
         }
+        else
+        {
+            //segment animation parameters
+            int ragdoll = isPlayerLeft ? 1 : -1;
+            bottom.LaunchAndDestroy(ragdoll);
+        }
+        
+        //drop sequence of segments down
+        //for(int i = 0; i < activeSegments.Count; i++)
+        //{
+        //    activeSegments[i].transform.position -= Vector3.up * segmentHeight;
+        //}
 
         //spawn new segment on top of sequence
         if (Spawning)
@@ -112,8 +144,24 @@ public class BeanManager : MonoBehaviour
             }
             activeSegments.Add(topSegment);
         }
+        UpdateSortingOrder();
         playerScore++;
         scoreText.text = playerScore.ToString();
+    }
+
+    //fixing the stalks to spawn at random order
+    private void UpdateSortingOrder()
+    {
+        for(int i=0;  i<activeSegments.Count; i++)
+        {
+            SpriteRenderer[] renderers = activeSegments[i].GetComponentsInChildren<SpriteRenderer>(true);
+            int order = (i + 1) * 10;
+            foreach(SpriteRenderer sr in renderers)
+            {
+                if (sr.gameObject.name.Contains("goldenBean")) sr.sortingOrder = order + 5;
+                else sr.sortingOrder = order;
+            }
+        }
     }
 
     public bool CanChop(bool isPlayerLeft)
@@ -180,10 +228,10 @@ public class BeanManager : MonoBehaviour
     [ContextMenu("Resetuj Rekord")]
     public void ResetHighScore()
     {
-        PlayerPrefs.DeleteKey("HighScore");
+        PlayerPrefs.DeleteKey("Highscore");
         highScore = 0;
         UpdateHighScore();
-        Debug.Log("Rekord zresetowany!");
+        Debug.Log("resert rekord");
     }
     [ContextMenu("Resetuj fasolki")]
     public void ResetBeanScore()
@@ -191,6 +239,6 @@ public class BeanManager : MonoBehaviour
         PlayerPrefs.DeleteKey("Golden Beans");
         goldenBeans = 0;
         UpdateBeanScore();
-        Debug.Log("Rekord zresetowany!");
+        Debug.Log("reset fasolek");
     }
 }
