@@ -58,7 +58,7 @@ public class BeanSegmentScript : MonoBehaviour
         Destroy(gameObject, 1f);
     }
 
-    public void PlayWinningSequence(GameObject winScreen)
+    public void PlayWinningSequence(BeanManager manager)
     {
         // enabling glow and setting bean with glow to be always on top
         if(goldenBean != null)
@@ -75,10 +75,10 @@ public class BeanSegmentScript : MonoBehaviour
             if (glowSr != null) glowSr.sortingOrder = 99;
         }
 
-        StartCoroutine(WinAnimation(winScreen));
+        StartCoroutine(WinAnimation(manager));
     }
 
-    private System.Collections.IEnumerator WinAnimation(GameObject winScreen)
+    private System.Collections.IEnumerator WinAnimation(BeanManager manager)
     {
         Transform beanTransform = goldenBean != null ? goldenBean.transform : transform;
         Transform winningGlowT = winningGlow != null ? winningGlow.transform : transform;
@@ -127,9 +127,10 @@ public class BeanSegmentScript : MonoBehaviour
             yield return null;
         }
 
-        if (winScreen != null)
+        if (manager.winScreen != null)
         {
-            winScreen.SetActive(true);
+            manager.newRecord.SetActive(true);
+            manager.winScreen.SetActive(true);
         }
     }
 

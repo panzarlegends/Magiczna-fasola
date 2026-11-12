@@ -107,12 +107,22 @@ public class BeanManager : MonoBehaviour
         //chop down one segment
         BeanSegmentScript bottom = activeSegments[0];
         activeSegments.RemoveAt(0);
-       // Destroy(bottom.gameObject);
+        // Destroy(bottom.gameObject);
 
-        if(bottom.CurrentSide == BranchSide.Bean)
+        playerScore++;
+        scoreText.text = playerScore.ToString();
+
+        if (bottom.CurrentSide == BranchSide.Bean)
         {
             // win animation + win screen activation
-            bottom.PlayWinningSequence(winScreen);
+            if (playerScore > highScore)
+            {
+                highScore = playerScore;
+                PlayerPrefs.SetInt("Highscore", highScore);
+                PlayerPrefs.Save();
+                UpdateHighScore();
+            }
+            bottom.PlayWinningSequence(this);
         }
         else
         {
@@ -145,8 +155,6 @@ public class BeanManager : MonoBehaviour
             activeSegments.Add(topSegment);
         }
         UpdateSortingOrder();
-        playerScore++;
-        scoreText.text = playerScore.ToString();
     }
 
     //fixing the stalks to spawn at random order
